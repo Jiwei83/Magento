@@ -55,6 +55,7 @@ if(isset($_SESSION['timeout'])) {
         $sku = $_GET['sku'];
         $sku = $sku."%";
         $supplier = substr($sku, 0, 3);
+        $time = date("Y-m-d");
         require_once "../../app/Mage.php";
         Mage::app('admin');
         $collection = Mage::getModel('catalog/product')->getCollection()

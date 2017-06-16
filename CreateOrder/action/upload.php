@@ -34,8 +34,8 @@ if(isset($_FILES["file"]["type"]))
 //                echo "<b>Size:</b> " . ($_FILES["file"]["size"] / 1024) . " kB<br>";
 //                echo "<b>Temp file:</b> " . $_FILES["file"]["tmp_name"] . "<br>";
                 $file = fopen($targetPath, "r");
+                echo "Added: <br />";
                 add2Order($file);
-                echo "Succeed!!!";
             }
         }
     }
@@ -55,7 +55,7 @@ function add2Order($file) {
             $name = $arr[1];
             $sku = $arr[2];
             $supplier = substr($sku, 0, 3);
-            $path = "order_" . $supplier . ".csv";
+            $path = "../order_" . $supplier . ".csv";
             $qty = $arr[5];
             $product = Mage::getModel('catalog/product')->getCollection()
                 ->addAttributeToSelect('id')
@@ -88,50 +88,58 @@ function add2Order($file) {
                 if (!empty($id) && !empty($name) && !empty($sku) && !empty($qty)) {
                     $content = file_get_contents($path);
                     $array = explode("\r\n", $content);
-                    for ($i = 0; $i < sizeof($array); $i++) {
-                        if (strpos($array[$i], $sku) !== false) {
-                            $product = explode(",", $array[$i]);
-                            $oldLine = $product[0] . ',' . $product[1] . ',' . $product[2] . ',' . $product[3] . ',' . $product[4] . ',' . $product[5]
-                                . ',' . $product[6] . ',' . $product[7];
-                            $product[5] = $product[5] + $qty;
-
-                            $newLine = $product[0] . ',' . $product[1] . ',' . $product[2] . ',' . $product[3] . ',' . $product[4] . ',' . $product[5]
-                                . ',' . $product[6] . ',' . $product[7];
-                            $content = str_replace($oldLine, $newLine, $content);
-                        }
-                    }
                     if (strpos($content, $sku) === false) {
                         $qty = $warning_stock + $order_qty + $qty - $stock;
                         $amount = $cost * $qty;
                         $line = $id . ',' . $name . ',' . $sku . ',' . $cost . ',' . $part_no . ',' . $qty . ',' . $shelf_no . ',' . $amount . "\r\n";
                         $content .= $line;
+                        file_put_contents($path, $content);
+                        echo $sku.', '. $qty ."<br />";
                     }
-                    file_put_contents($path, $content);
+                    else {
+                        for ($i = 0; $i < sizeof($array); $i++) {
+                            if (strpos($array[$i], $sku) !== false) {
+                                $product = explode(",", $array[$i]);
+                                $oldLine = $product[0] . ',' . $product[1] . ',' . $product[2] . ',' . $product[3] . ',' . $product[4] . ',' . $product[5]
+                                    . ',' . $product[6] . ',' . $product[7]. "\r\n";
+                                $product[5] = $product[5] + $qty;
+                                $product[7] = $product[3] * $product[5];
+                                $newLine = $product[0] . ',' . $product[1] . ',' . $product[2] . ',' . $product[3] . ',' . $product[4] . ',' . $product[5]
+                                    . ',' . $product[6] . ',' . $product[7]. "\r\n";
+                                $content = str_replace($oldLine, $newLine, $content);
+                                file_put_contents($path, $content);
+                                echo $product[2].',  ' . $product[5] . "<br />";
+                            }
+                        }
+                    }
                 }
             } else if ($stock < $qty && $order_qty != 0) {
                 if (!empty($id) && !empty($name) && !empty($sku) && !empty($qty)) {
                     $content = file_get_contents($path);
                     $array = explode("\r\n", $content);
-                    for ($i = 0; $i < sizeof($array); $i++) {
-                        if (strpos($array[$i], $sku) !== false) {
-                            $product = explode(",", $array[$i]);
-                            $oldLine = $product[0] . ',' . $product[1] . ',' . $product[2] . ',' . $product[3] . ',' . $product[4] . ',' . $product[5]
-                                . ',' . $product[6] . ',' . $product[7];
-                            $product[5] = $product[5] + $qty;
-                            $product[7] = $product[4] * $product[5];
-
-                            $newLine = $product[0] . ',' . $product[1] . ',' . $product[2] . ',' . $product[3] . ',' . $product[4] . ',' . $product[5]
-                                . ',' . $product[6] . ',' . $product[7];
-                            $content = str_replace($oldLine, $newLine, $content);
+                    if (strpos($content, $sku) === false) {
+                        $amount = $cost * $qty;
+                        $line = $id . ',' . $name . ',' . $sku . ',' . $cost . ',' . $part_no . ',' . $qty . ',' . $shelf_no . ',' . $amount. "\r\n";
+                        $content .= $line;
+                        file_put_contents($path, $content);
+                        echo $sku.', '. $qty ."<br />";
+                    }
+                    else {
+                        for ($i = 0; $i < sizeof($array); $i++) {
+                            if (strpos($array[$i], $sku) !== false) {
+                                $product = explode(",", $array[$i]);
+                                $oldLine = $product[0] . ',' . $product[1] . ',' . $product[2] . ',' . $product[3] . ',' . $product[4] . ',' . $product[5]
+                                    . ',' . $product[6] . ',' . $product[7]. "\r\n";
+                                $product[5] = $product[5] + $qty;
+                                $product[7] = $product[3] * $product[5];
+                                $newLine = $product[0] . ',' . $product[1] . ',' . $product[2] . ',' . $product[3] . ',' . $product[4] . ',' . $product[5]
+                                    . ',' . $product[6] . ',' . $product[7]. "\r\n";
+                                $content = str_replace($oldLine, $newLine, $content);
+                                file_put_contents($path, $content);
+                                echo $product[2].',  ' . $product[5] . "<br />";
+                            }
                         }
                     }
-                    if (strpos($content, $sku) === false) {
-                        $qty = $qty + $order_qty;
-                        $amount = $cost * $qty;
-                        $line = $id . ',' . $name . ',' . $sku . ',' . $cost . ',' . $part_no . ',' . $qty . ',' . $shelf_no . ',' . $amount;
-                        $content .= $line . "\r\n";
-                    }
-                    file_put_contents($path, $content);
                 }
             }
         }
@@ -140,7 +148,7 @@ function add2Order($file) {
             $name = $arr[1];
             $sku = $arr[2];
             $supplier = $sku;
-            $path = "order_".$supplier.".csv";
+            $path = "../order_".$supplier.".csv";
             $part_no = $arr[4];
             $qty = $arr[5];
             $cost = " ";
@@ -150,6 +158,7 @@ function add2Order($file) {
             $content = file_get_contents($path);
             $content .= $line;
             file_put_contents($path, $content);
+            echo $sku.', '. $qty ."<br />";
         }
     }
 }
